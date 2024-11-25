@@ -5,8 +5,8 @@ import CamParams as cam
 class Aruco_Detect():
     def __init__(self):
 
-        self.distCoeffs = cam.distCoeffs
-        self.camMatrix = cam.camMatrix
+        # self.distCoeffs = cam.distCoeffs
+        # self.camMatrix = cam.camMatrix
 
 
         ## Utils ##
@@ -14,7 +14,9 @@ class Aruco_Detect():
 
 
         ## Initialize ##
-        self.cv2_img = 0
+        from PIL import Image
+        self.cv2_img = np.array(Image.open("Align Example_screenshot_24.11.2024.png"))
+        # self.cv2_img = 0
         self.corners = 0
         self.ids = 0
         self.rejected = 0
@@ -28,9 +30,10 @@ class Aruco_Detect():
 
     def find_aruco(self):
         self.corners, self.ids, self.rejected = self.detector.detectMarkers(self.cv2_img)
-        print("Detected markers: ", self.ids, "#", len(self.corners))
-        assert len(self.corners) == 4
+        # print(len(self.corners))
+        # assert len(self.corners) == 4
         self.ids = self.ids.flatten()  ## {NoneType} object has no attribute 'flatten', convert to shape (n,)
+        print("Detected markers: ", self.ids, "#", len(self.corners))
         pointlist = self.extract_corner()
         return pointlist
 
@@ -40,14 +43,19 @@ class Aruco_Detect():
             corner = np.array(corner).reshape((4, 2))
             (topLeft, topRight, bottomRight, bottomLeft) = corner
 
-            topRightPoint    = np.array([int(topRight[0]),      int(topRight[1])])
-            topLeftPoint     = np.array([int(topLeft[0]),       int(topLeft[1])])
-            bottomRightPoint = np.array([int(bottomRight[0]),   int(bottomRight[1])])
-            bottomLeftPoint  = np.array([int(bottomLeft[0]),    int(bottomLeft[1])])
-            stackedPoint = np.hstack(topRightPoint, topLeftPoint, bottomRightPoint, bottomLeftPoint)
-            middlePoint = [np.mean(stackedPoint[0]), np.mean(stackedPoint[1])]
+            stackedPoint = np.vstack((topRight, topLeft, bottomRight, bottomLeft))
+            middlePoint = [np.mean(stackedPoint[:, 0]), np.mean(stackedPoint[:, 1])]
+            middlePoint = np.array([int(middlePoint[0]), int(middlePoint[1])])
             Pointlist.append(middlePoint)
         return Pointlist
+
+    def display_points(self, points, img=None):
+        if img is None: img = self.cv2_img
+        for point in points:
+            u, v = point[0], point[1]
+            cv2.circle(img,(u, v), 1, color=(0, 255, 0), thickness=-1)
+        cv2.imshow("", img)
+        cv2.waitKey()
 
 
 
@@ -55,7 +63,10 @@ class Aruco_Detect():
 if __name__ == '__main__':
     ad = Aruco_Detect()
 
-    while True:
-        pointlist = ad.find_aruco()
-        print("_________________________________")
+
+    # while True:
+    pointlist = ad.find_aruco()
+    print(pointlist)
+    ad.display_points(pointlist)
+
 
